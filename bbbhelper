@@ -1,0 +1,13 @@
+#! /bin/bash
+
+! test ffmpep && echo "Please install ffmpef first" && exit 0
+
+EXPORT_HOME="$1/Exported"
+mkdir -p $EXPORT_HOME
+
+for i in `find $1 -type d -iname "session*" | sort -V`; do
+	OUTPUT="`echo $i | awk -F "/" '{print $NF}'`.mp4"
+	VIDEO_HOME="$i/video/webcams.webm"
+	AUDIO_HOME="$i/deskshare/deskshare.webm"
+	ffmpeg -i "$VIDEO_HOME" -i "$AUDIO_HOME" -c:v copy -c:a aac "$EXPORT_HOME/$OUTPUT"
+done
