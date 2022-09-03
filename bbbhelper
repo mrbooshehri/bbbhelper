@@ -1,13 +1,58 @@
 #! /bin/bash
 
-! test ffmpep && echo "Please install ffmpef first" && exit 0
+! test ffmpep && echo "Please install ffmpef first" && exit 127
 
-EXPORT_HOME="$1/Exported"
-mkdir -p $EXPORT_HOME
+BBB_DOWNLOAD_HOME="$HOME/bbb-download"
 
-for i in `find $1 -type d -iname "session*" | sort -V`; do
-	OUTPUT="`echo $i | awk -F "/" '{print $NF}'`.mp4"
-	VIDEO_HOME="$i/video/webcams.webm"
-	AUDIO_HOME="$i/deskshare/deskshare.webm"
-	ffmpeg -i "$VIDEO_HOME" -i "$AUDIO_HOME" -c:v copy -c:a aac "$EXPORT_HOME/$OUTPUT"
+
+! test -d $BBB_DOWNLOAD_HOME 
+
+_merg(){
+	EXPORT_HOME="$1/Exported"
+	mkdir -p $EXPORT_HOME
+
+	for i in `find $1 -type d -iname "session*" | sort -V`; do
+		OUTPUT="`echo $i | awk -F "/" '{print $NF}'`.mp4"
+		VIDEO_HOME="$i/video/webcams.webm"
+		AUDIO_HOME="$i/deskshare/deskshare.webm"
+		ffmpeg -i "$VIDEO_HOME" -i "$AUDIO_HOME" -c:v copy -c:a aac "$EXPORT_HOME/$OUTPUT"
+	done
+}
+
+_file_downloader(){
+	for i in `cat $1`; do
+		BASE_URL=`echo $i | grep -oP "^.+?[^\/:](?=[?\/]|$)"`
+		if [[ "$i" == *"meetingId="* ]]; then
+			MEETING_ID=`echo $i | awk -F "meetingId=" '{print $NF}'`
+		else
+			MEETING_ID=`echo $i | awk -F "/" '{print $NF}'`
+		fi
+		echo $BASE_URL
+		echo $MEETING_ID
+	done
+}
+
+_help(){
+	echo "BigBlueButton(bbb) helper"
+	echo
+	echo "Options:"
+	echo -e "  -f\tDownlaod from a file"
+	echo -e "  -m\tMerg video and audio"
+	echo -e "  -h\tShow this message"
+}
+
+while getopts "mfh?" opt 
+do
+   case "$opt" in
+      f)
+				_file_downloader $1 ;;
+			m) 
+				_merg $1 ;;
+      h|?)
+         _help
+         exit 0;;
+   esac
 done
+
+shift $((OPTIND-1))
+[[ "${1:-}" = "--" ]] && shift
